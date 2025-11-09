@@ -3,33 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Steal-a-Thing 3D</title>
+<title>Steal-a-Thing 3D Herbe</title>
 <style>
-  body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-  #info { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 6px; }
+  body { margin: 0; overflow: hidden; }
 </style>
 </head>
 <body>
-<div id="info">
-  <h1>Steal-a-Thing 3D 🚀</h1>
-  <p>8 bases × 12 slots. Personnages aléatoires.</p>
-</div>
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
 // --- Scène ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
+scene.background = new THREE.Color(0xa0a0a0);
 
 // --- Caméra ---
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-camera.position.set(0, 25, 40);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 30, 40);
 camera.lookAt(0, 0, 0);
 
 // --- Renderer ---
@@ -41,71 +31,106 @@ document.body.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(10, 20, 10);
-scene.add(directionalLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 30, 10);
+scene.add(dirLight);
 
-// --- Tapis blanc ---
-const tapisGeometry = new THREE.PlaneGeometry(40, 30);
-const tapisMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-const tapis = new THREE.Mesh(tapisGeometry, tapisMaterial);
+// --- Sol vert ---
+const solGeo = new THREE.PlaneGeometry(60, 30);
+const solMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // vert herbe
+const sol = new THREE.Mesh(solGeo, solMat);
+sol.rotation.x = -Math.PI / 2;
+scene.add(sol);
+
+// --- Tapis central vert clair ---
+const tapisGeo = new THREE.PlaneGeometry(40, 15);
+const tapisMat = new THREE.MeshStandardMaterial({ color: 0x7CFC00 });
+const tapis = new THREE.Mesh(tapisGeo, tapisMat);
+tapis.position.y = 0.01;
 tapis.rotation.x = -Math.PI / 2;
 scene.add(tapis);
 
-// --- Bases et slots ---
-const BASES = 8;
-const SLOTS = 12;
-const baseWidth = 4;
-const baseDepth = 2;
-const slotSpacing = 1;
+// --- Murs autour du playset ---
+const murs = [];
+const murConfigs = [
+  { x:0, y:0.5, z:-15, w:60, h:1, d:1, color:0x808080 }, // gris bas
+  { x:0, y:1.5, z:-15, w:60, h:1, d:1, color:0x8B4513 }, // marron milieu
+  { x:0, y:2.5, z:-15, w:60, h:0.2, d:1, color:0x228B22 }, // vert fin dessus
+];
+murConfigs.forEach(cfg => {
+  const geo = new THREE.BoxGeometry(cfg.w, cfg.h, cfg.d);
+  const mat = new THREE.MeshStandardMaterial({ color: cfg.color });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(cfg.x, cfg.y, cfg.z);
+  scene.add(mesh);
+});
 
-const characters = [
-  { name: "Petit Titan", color: 0xff0000 },
-  { name: "Souris Malicieuse", color: 0x00ff00 },
-  { name: "Mini Robot", color: 0x0000ff }
+// --- Bases gauches et droites ---
+const BASES = 4;
+const SLOTS = 6;
+const baseWidth = 3;
+const baseDepth = 2;
+const slotSpacing = 1.2;
+
+// Personnages simples
+const charactersData = [
+  { color: 0xff0000 }, { color: 0x00ff00 }, { color: 0x0000ff }
 ];
 
-for (let b = 0; b < BASES; b++) {
-  for (let s = 0; s < SLOTS; s++) {
-    // Crée un cube pour le slot
-    const slotGeometry = new THREE.BoxGeometry(baseWidth, 1, baseDepth);
-    const slotMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
-    const slot = new THREE.Mesh(slotGeometry, slotMaterial);
-
-    slot.position.x = (s - SLOTS/2) * (baseWidth + slotSpacing) + baseWidth/2;
-    slot.position.z = (b - BASES/2) * (baseDepth + slotSpacing) + baseDepth/2;
-    slot.position.y = 0.5;
-
-    // Ajouter personnage aléatoire selon chance
-    const rand = Math.random();
-    if (rand < 0.3) { // 30% de chance
-      const char = characters[Math.floor(Math.random() * characters.length)];
-      const charGeom = new THREE.BoxGeometry(1, 2, 1);
-      const charMat = new THREE.MeshStandardMaterial({ color: char.color });
-      const charMesh = new THREE.Mesh(charGeom, charMat);
-      charMesh.position.y = 1.5; // au-dessus du slot
-      charMesh.position.x = slot.position.x;
-      charMesh.position.z = slot.position.z;
-      scene.add(charMesh);
-    }
-
+// Gauche
+for(let b=0;b<BASES;b++){
+  for(let s=0;s<SLOTS;s++){
+    const slotGeo = new THREE.BoxGeometry(baseWidth,1,baseDepth);
+    const slotMat = new THREE.MeshStandardMaterial({ color:0xaaaaaa });
+    const slot = new THREE.Mesh(slotGeo, slotMat);
+    slot.position.set(-25 + b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
     scene.add(slot);
+
+    // personnage
+    if(Math.random()<0.3){
+      const c = charactersData[Math.floor(Math.random()*charactersData.length)];
+      const charGeo = new THREE.BoxGeometry(1,2,1);
+      const charMat = new THREE.MeshStandardMaterial({ color:c.color });
+      const char = new THREE.Mesh(charGeo,charMat);
+      char.position.set(slot.position.x,1.5,slot.position.z);
+      scene.add(char);
+    }
+  }
+}
+
+// Droite
+for(let b=0;b<BASES;b++){
+  for(let s=0;s<SLOTS;s++){
+    const slotGeo = new THREE.BoxGeometry(baseWidth,1,baseDepth);
+    const slotMat = new THREE.MeshStandardMaterial({ color:0xaaaaaa });
+    const slot = new THREE.Mesh(slotGeo, slotMat);
+    slot.position.set(25 - b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
+    scene.add(slot);
+
+    if(Math.random()<0.3){
+      const c = charactersData[Math.floor(Math.random()*charactersData.length)];
+      const charGeo = new THREE.BoxGeometry(1,2,1);
+      const charMat = new THREE.MeshStandardMaterial({ color:c.color });
+      const char = new THREE.Mesh(charGeo,charMat);
+      char.position.set(slot.position.x,1.5,slot.position.z);
+      scene.add(char);
+    }
   }
 }
 
 // --- Animation ---
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
 animate();
 
-// --- Gestion du redimensionnement ---
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+// --- Resize ---
+window.addEventListener('resize',()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(window.innerWidth,window.innerHeight);
 });
 </script>
 </body>
