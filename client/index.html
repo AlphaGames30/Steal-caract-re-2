@@ -1,14 +1,212 @@
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<script>
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x44aa88);
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 100);
-camera.position.z = 5;
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
-const cube = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial({color:0x00ff00}));
-scene.add(cube);
-renderer.render(scene, camera);
-</script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steal-a-Thing 3D Jouable</title>
+<style>
+  body { margin: 0; overflow: hidden; background: black; }
+  #message {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: red;
+    font-size: 24px;
+    font-weight: bold;
+    display: none;
+    z-index: 10;
+  }
+  #money {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: yellow;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<div id="message">Plus de place, vends-en un !</div>
+<div id="money">💵 100</div>
 
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/controls/OrbitControls.js";
+
+// --- Renderer ---
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// --- Scène ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa0a0a0);
+
+// --- Caméra ---
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+camera.position.set(0, 15, 25);
+
+// --- Contrôles 360° ---
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0,1,0);
+controls.enablePan = false;
+controls.enableZoom = true;
+
+// --- Lumières ---
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10,30,10);
+scene.add(dirLight);
+
+// --- Sol et tapis ---
+const sol = new THREE.Mesh(new THREE.PlaneGeometry(60,40), new THREE.MeshStandardMaterial({ color:0x228B22 }));
+sol.rotation.x = -Math.PI/2;
+scene.add(sol);
+
+const tapis = new THREE.Mesh(new THREE.PlaneGeometry(6,20), new THREE.MeshStandardMaterial({ color:0x7CFC00 }));
+tapis.position.y = 0.01;
+tapis.rotation.x = -Math.PI/2;
+scene.add(tapis);
+
+// --- Argent du joueur ---
+let money = 100;
+const moneyDiv = document.getElementById('money');
+function updateMoneyDisplay(){
+  moneyDiv.textContent = `💵 ${Math.floor(money)}`;
+}
+updateMoneyDisplay();
+
+// --- Message d’erreur ---
+const messageDiv = document.getElementById('message');
+function showMessage(text){
+  messageDiv.textContent = text;
+  messageDiv.style.display = 'block';
+  setTimeout(()=>{messageDiv.style.display='none';},1500);
+}
+
+// --- Classe PNJ ---
+class PNJ {
+  constructor(name, rarity, price, x, z){
+    this.name = name;
+    this.rarity = rarity;
+    this.price = price;
+    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), 
+      new THREE.MeshStandardMaterial({ color: PNJ.getColor(rarity) })
+    );
+    this.mesh.position.set(x,1,z);
+    scene.add(this.mesh);
+
+    // Texte au-dessus
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.fillText(`${name}`,10,20);
+    ctx.fillText(`${rarity} | ${price}💵`,10,40);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent:true });
+    this.label = new THREE.Sprite(spriteMat);
+    this.label.scale.set(5,1,1);
+    this.label.position.set(x,3,z);
+    scene.add(this.label);
+  }
+
+  move(speed){
+    this.mesh.position.z += speed;
+    this.label.position.z += speed;
+  }
+
+  static getColor(rarity){
+    switch(rarity){
+      case 'Commun': return 0xaaaaaa;
+      case 'Rare': return 0x00ff00;
+      case 'Epic': return 0x0000ff;
+      case 'Légendaire': return 0xffd700;
+      default: return 0xffffff;
+    }
+  }
+}
+
+// --- PNJ disponibles ---
+const availablePNJ = [
+  {name:'Petit Titan', rarity:'Commun', price:50},
+  {name:'Souris Malicieuse', rarity:'Commun', price:80},
+  {name:'Grand Héron', rarity:'Rare', price:120},
+  {name:'Petit Dragon', rarity:'Epic', price:500},
+];
+
+// --- Liste PNJ sur tapis ---
+const pnjList = [];
+
+// --- Acheter et spawn PNJ ---
+function spawnPNJ(pnjData){
+  if(money >= pnjData.price){
+    money -= pnjData.price;
+    updateMoneyDisplay();
+    const pnj = new PNJ(pnjData.name, pnjData.rarity, pnjData.price, 0, -10);
+    pnjList.push(pnj);
+  } else {
+    showMessage("Pas assez d'argent !");
+  }
+}
+
+// --- Achat auto toutes les 5 secondes ---
+setInterval(()=>spawnPNJ(availablePNJ[Math.floor(Math.random()*availablePNJ.length)]), 5000);
+
+// --- Joueur ---
+const player = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), new THREE.MeshStandardMaterial({ color:0x0000ff }));
+player.position.set(0,1,12);
+scene.add(player);
+
+// --- Contrôles joueur ---
+const keys = {};
+document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+const speed = 0.2;
+
+// --- Animation ---
+function animate(){
+  requestAnimationFrame(animate);
+
+  // Déplacement joueur
+  if(keys['w'] || keys['arrowup']) player.position.z -= speed;
+  if(keys['s'] || keys['arrowdown']) player.position.z += speed;
+  if(keys['a'] || keys['arrowleft']) player.position.x -= speed;
+  if(keys['d'] || keys['arrowright']) player.position.x += speed;
+
+  // Caméra suit le joueur
+  camera.position.x = player.position.x + 10;
+  camera.position.y = player.position.y + 10;
+  camera.position.z = player.position.z + 15;
+  camera.lookAt(player.position);
+
+  // Déplacement PNJ
+  for(let i=pnjList.length-1;i>=0;i--){
+    const p = pnjList[i];
+    p.move(0.02);
+    if(p.mesh.position.z > 10){
+      scene.remove(p.mesh);
+      scene.remove(p.label);
+      pnjList.splice(i,1);
+    }
+  }
+
+  renderer.render(scene,camera);
+}
+
+animate();
+
+// --- Resize ---
+window.addEventListener('resize',()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
+</body>
+</html>
