@@ -34,19 +34,22 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/controls/OrbitControls.js';
 
-// --- Scène ---
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa0a0a0);
-
 // --- Renderer ---
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// --- Caméra et contrôles ---
+// --- Scène ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa0a0a0);
+
+// --- Caméra ---
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
 camera.position.set(0, 15, 25);
-const controls = new OrbitControls(camera, renderer?.domElement);
+camera.lookAt(0,0,0);
+
+// --- Contrôles 360° ---
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0,1,0);
 controls.enablePan = false;
 controls.enableZoom = true;
@@ -138,13 +141,12 @@ const availablePNJ = [
   {name:'Souris Malicieuse', rarity:'Commun', price:80},
   {name:'Grand Héron', rarity:'Rare', price:120},
   {name:'Petit Dragon', rarity:'Epic', price:500},
-  // ajouter les autres ici...
 ];
 
 // --- Liste des PNJ sur tapis ---
 const pnjList = [];
 
-// --- Spawn PNJ (mais seulement si acheté) ---
+// --- Acheter et spawn PNJ ---
 function spawnPNJ(pnjData){
   if(money >= pnjData.price){
     money -= pnjData.price;
@@ -156,7 +158,7 @@ function spawnPNJ(pnjData){
   }
 }
 
-// Exemple : acheter un PNJ toutes les 5 secondes automatiquement (pour test)
+// --- Exemple : acheter un PNJ automatiquement toutes les 5 secondes ---
 setInterval(()=>spawnPNJ(availablePNJ[Math.floor(Math.random()*availablePNJ.length)]), 5000);
 
 // --- Personnage joueur ---
@@ -189,8 +191,8 @@ function animate(){
   // Déplacer PNJ
   for(let i=pnjList.length-1;i>=0;i--){
     const p = pnjList[i];
-    p.move(0.02); // vitesse PNJ plus lente
-    if(p.mesh.position.z > 10){ // fin du tapis
+    p.move(0.02);
+    if(p.mesh.position.z > 10){
       scene.remove(p.mesh);
       scene.remove(p.label);
       pnjList.splice(i,1);
@@ -208,7 +210,6 @@ window.addEventListener('resize',()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
 });
-
 </script>
 </body>
 </html>
