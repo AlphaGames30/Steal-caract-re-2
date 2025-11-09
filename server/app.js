@@ -6,6 +6,9 @@ import { fileURLToPath } from "url";
 import gameRoutes from "./routes/game.js";
 import playerRoutes from "./routes/player.js";
 import playsetRoutes from "./routes/playset.js";
+import charactersRoutes from "./routes/characters.js";
+
+app.use("/api/characters", charactersRoutes);
 
 dotenv.config();
 
@@ -13,6 +16,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express(); // ⬅️ App doit être créé avant toute utilisation
+
+async function loadCharacters() {
+  const res = await fetch("/api/characters");
+  const characters = await res.json();
+  console.log(characters); // tu peux les afficher dans le playset
+}
+loadCharacters();
 
 app.use(cors());
 app.use(express.json());
