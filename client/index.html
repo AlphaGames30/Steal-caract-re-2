@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Steal-a-Thing 3D Jouable</title>
+<title>Steal-a-Thing 3D Jouable + PNJ</title>
 <style>
   body { margin: 0; overflow: hidden; }
 </style>
@@ -48,32 +48,30 @@ tapis.position.y = 0.01;
 tapis.rotation.x = -Math.PI/2;
 scene.add(tapis);
 
-// --- Murs autour de tout le playset ---
-function createWall(x, y, z, w, h, d, color){
+// --- Murs sur tous les côtés ---
+function createWall(x,y,z,w,h,d,color){
   const geo = new THREE.BoxGeometry(w,h,d);
   const mat = new THREE.MeshStandardMaterial({ color });
-  const mesh = new THREE.Mesh(geo, mat);
+  const mesh = new THREE.Mesh(geo,mat);
   mesh.position.set(x,y,z);
   scene.add(mesh);
 }
 
-// Couches : gris bas, marron milieu, vert fin dessus
 const wallHeight = [1,1,0.2];
-const wallColors = [0x808080, 0x8B4513, 0x228B22];
+const wallColors = [0x808080,0x8B4513,0x228B22];
 const halfWidth = 60/2;
 const halfDepth = 40/2;
-
 for(let i=0;i<3;i++){
   const y = wallHeight[i]/2 + (i>0 ? wallHeight[i-1]:0);
-  // Murs X (avant/arrière)
+  // murs X
   createWall(0,y,-halfDepth,60,wallHeight[i],0.5,wallColors[i]);
   createWall(0,y,halfDepth,60,wallHeight[i],0.5,wallColors[i]);
-  // Murs Z (gauche/droite)
+  // murs Z
   createWall(-halfWidth,y,0,0.5,wallHeight[i],40,wallColors[i]);
   createWall(halfWidth,y,0,0.5,wallHeight[i],40,wallColors[i]);
 }
 
-// --- Bases : 4 à gauche, 4 à droite ---
+// --- Bases ---
 const BASES = 4;
 const SLOTS = 6;
 const baseWidth = 3;
@@ -82,14 +80,14 @@ const slotSpacing = 1.2;
 
 for(let b=0;b<BASES;b++){
   for(let s=0;s<SLOTS;s++){
-    // Gauche
+    // gauche
     const slotGeo = new THREE.BoxGeometry(baseWidth,1,baseDepth);
     const slotMat = new THREE.MeshStandardMaterial({ color:0xaaaaaa });
-    const slot = new THREE.Mesh(slotGeo, slotMat);
+    const slot = new THREE.Mesh(slotGeo,slotMat);
     slot.position.set(-25 + b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
     scene.add(slot);
-    // Droite
-    const slot2 = new THREE.Mesh(slotGeo, slotMat.clone());
+    // droite
+    const slot2 = new THREE.Mesh(slotGeo,slotMat.clone());
     slot2.position.set(25 - b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
     scene.add(slot2);
   }
@@ -98,32 +96,69 @@ for(let b=0;b<BASES;b++){
 // --- Personnage contrôlable ---
 const playerGeo = new THREE.BoxGeometry(1,2,1);
 const playerMat = new THREE.MeshStandardMaterial({ color:0x0000ff });
-const player = new THREE.Mesh(playerGeo, playerMat);
+const player = new THREE.Mesh(playerGeo,playerMat);
 player.position.set(0,1,12);
 scene.add(player);
 
-// --- Déplacements ---
+// --- Portails ---
+const portalNorthGeo = new THREE.BoxGeometry(6,3,0.5);
+const portalSouthGeo = new THREE.BoxGeometry(6,3,0.5);
+const portalMat = new THREE.MeshStandardMaterial({ color:0xff00ff, transparent:true, opacity:0.5 });
+const portalNorth = new THREE.Mesh(portalNorthGeo,portalMat);
+portalNorth.position.set(0,1.5,-15);
+scene.add(portalNorth);
+
+const portalSouth = new THREE.Mesh(portalSouthGeo,portalMat.clone());
+portalSouth.position.set(0,1.5,15);
+scene.add(portalSouth);
+
+// --- PNJ ---
+const pnjList = [];
+const pnjColors = [0xff0000,0x00ff00,0xffff00];
+
+function spawnPNJ(){
+  const geo = new THREE.BoxGeometry(1,2,1);
+  const mat = new THREE.MeshStandardMaterial({ color: pnjColors[Math.floor(Math.random()*pnjColors.length)] });
+  const pnj = new THREE.Mesh(geo,mat);
+  pnj.position.set(0,1,-15); // portail nord
+  pnjList.push(pnj);
+  scene.add(pnj);
+}
+
+// spawn un PNJ toutes les 2 secondes
+setInterval(spawnPNJ,2000);
+
+// --- Déplacements joueur ---
 const keys = {};
 document.addEventListener('keydown', e=>keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', e=>keys[e.key.toLowerCase()] = false);
-
 const speed = 0.2;
 
 // --- Animation ---
 function animate(){
   requestAnimationFrame(animate);
 
-  // Contrôle joueur
+  // Déplacer joueur
   if(keys['w'] || keys['arrowup']) player.position.z -= speed;
   if(keys['s'] || keys['arrowdown']) player.position.z += speed;
   if(keys['a'] || keys['arrowleft']) player.position.x -= speed;
   if(keys['d'] || keys['arrowright']) player.position.x += speed;
 
-  // Caméra derrière le joueur
+  // Caméra derrière joueur
   camera.position.x = player.position.x;
   camera.position.z = player.position.z + 8;
   camera.position.y = player.position.y + 5;
   camera.lookAt(player.position);
+
+  // Déplacer les PNJ vers le sud
+  for(let i=pnjList.length-1;i>=0;i--){
+    const pnj = pnjList[i];
+    pnj.position.z += 0.05; // vitesse PNJ
+    if(pnj.position.z > 15){ // portail sud
+      scene.remove(pnj);
+      pnjList.splice(i,1);
+    }
+  }
 
   renderer.render(scene,camera);
 }
@@ -139,3 +174,4 @@ window.addEventListener('resize',()=>{
 </script>
 </body>
 </html>
+
