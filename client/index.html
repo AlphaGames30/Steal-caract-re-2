@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Steal-a-Thing 3D</title>
+<title>Steal-a-Thing 3D Bases</title>
 <style>
-  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
-  #money, #message { position:absolute; z-index:10; font-weight:bold; }
-  #money { bottom:10px; right:10px; color:yellow; font-size:18px; }
-  #message { top:10px; left:50%; transform:translateX(-50%); color:red; font-size:18px; display:none; }
+html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
+#money, #message { position:absolute; z-index:10; font-weight:bold; }
+#money { bottom:10px; right:10px; color:yellow; font-size:18px; }
+#message { top:10px; left:50%; transform:translateX(-50%); color:red; font-size:18px; display:none; }
 </style>
 </head>
 <body>
@@ -24,7 +24,7 @@ const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color3(0.6,0.8,1);
 
 // --- Caméra joueur ---
-const camera = new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/3,50,new BABYLON.Vector3(0,0,0),scene);
+const camera = new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/3,120,new BABYLON.Vector3(0,0,0),scene);
 camera.attachControl(canvas,true);
 
 // --- Lumières ---
@@ -32,13 +32,26 @@ new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
 const dirLight = new BABYLON.DirectionalLight("dir",new BABYLON.Vector3(0,-1,1),scene);
 dirLight.intensity = 0.7;
 
-// --- Sol ---
+// --- Sol et murs ---
 const ground = BABYLON.MeshBuilder.CreateGround("ground",{width:90,height:100},scene);
-const groundMat = new BABYLON.StandardMaterial("groundMat",scene);
-groundMat.diffuseColor = new BABYLON.Color3(0,0.6,0);
-ground.material = groundMat;
+ground.material = new BABYLON.StandardMaterial("groundMat",scene);
+ground.material.diffuseColor = new BABYLON.Color3(0,0.6,0);
 
-// --- Portails nord et sud ---
+// Murs autour
+function createWall(x,z,width,height,depth){
+  const wall = BABYLON.MeshBuilder.CreateBox("wall",{width,height,depth},scene);
+  wall.position.set(x,height/2,z);
+  wall.material = new BABYLON.StandardMaterial("wallMat",scene);
+  wall.material.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
+  return wall;
+}
+// Murs : nord, sud, est, ouest
+createWall(0,-50,90,10,1);
+createWall(0,50,90,10,1);
+createWall(-45,0,1,10,100);
+createWall(45,0,1,10,100);
+
+// --- Portails nord/sud ---
 function createPortal(x,z,name){
   const portal = BABYLON.MeshBuilder.CreateBox(name,{width:6,height:6,depth:1},scene);
   portal.position.set(x,3,z);
@@ -50,15 +63,15 @@ function createPortal(x,z,name){
 const northPortal = createPortal(0,-48,"north");
 const southPortal = createPortal(0,48,"south");
 
-// --- Bases interactives ---
+// --- Bases (4 gauche + 4 droite) ---
 const bases = [];
 function createBase(x,z){
-  const base = BABYLON.MeshBuilder.CreateBox("base",{width:10,height:5,depth:10},scene);
-  base.position.set(x,2.5,z);
+  const base = BABYLON.MeshBuilder.CreateBox("base",{width:12,height:6,depth:12},scene);
+  base.position.set(x,3,z);
   const mat = new BABYLON.StandardMaterial("baseMat",scene);
   mat.diffuseColor = new BABYLON.Color3(0.7,0.7,0.7);
   base.material = mat;
-  base.slots = [null,null,null]; // 3 slots par base
+  base.slots = [null,null,null]; // 3 slots PNJ
   bases.push(base);
   return base;
 }
@@ -89,7 +102,6 @@ function showMessage(text){
 class PNJ{
   constructor(data,x,z){
     this.data = data;
-    // Skins selon le nom
     const size = data.name==="Petit Dragon"?1.5:1;
     this.mesh = BABYLON.MeshBuilder.CreateBox(data.name,{width:size,height:size*2,depth:size},scene);
     this.mesh.position.set(x,size,z);
@@ -97,10 +109,10 @@ class PNJ{
     mat.diffuseColor = PNJ.getColor(data.rarity);
     this.mesh.material = mat;
 
-    // GUI label
+    // Label GUI
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
     const label = new BABYLON.GUI.Rectangle();
-    label.width="100px"; label.height="50px"; label.background="transparent";
+    label.width="90px"; label.height="45px"; label.background="transparent";
     const textBlock = new BABYLON.GUI.TextBlock();
     textBlock.text = `${data.name}\n${data.rarity}\n${data.gain}/s\n${data.price}💵`;
     textBlock.color="white"; textBlock.fontSize=12; textBlock.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
@@ -109,7 +121,7 @@ class PNJ{
     label.linkWithMesh(this.mesh);
     label.linkOffsetY=-40;
 
-    // Achat clic
+    // Achat au clic
     this.mesh.actionManager = new BABYLON.ActionManager(scene);
     this.mesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger,()=>{
       buyPNJ(this);
@@ -188,6 +200,3 @@ window.addEventListener("resize",()=>engine.resize());
 </script>
 </body>
 </html>
-
-
-
