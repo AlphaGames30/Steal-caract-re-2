@@ -32,10 +32,6 @@ const engine = new BABYLON.Engine(canvas,true);
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color3(0.6,0.8,1);
 
-// --- Caméra joueur ---
-const camera = new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/3,120,new BABYLON.Vector3(0,0,0),scene);
-camera.attachControl(canvas,true);
-
 // --- Lumières ---
 new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
 const dirLight = new BABYLON.DirectionalLight("dir",new BABYLON.Vector3(0,-1,1),scene);
