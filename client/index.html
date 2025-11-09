@@ -5,32 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Steal-a-Thing</title>
 <style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+  }
+
   .tapis {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 2 lignes x 4 colonnes de bases */
-    gap
-  <h1>Bienvenue sur Steal-a-Thing 🚀</h1>
-  <p>Front minimal pour tester les routes API.</p>
-  <button onclick="testRoute('/api/game')">Tester /api/game</button>
-  <button onclick="testRoute('/api/player')">Tester /api/player</button>
-  <pre id="result"></pre>
+    grid-template-columns: repeat(4, 1fr); /* 2 lignes x 4 colonnes */
+    gap: 20px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
 
-  <script>
-    async function testRoute(route) {
-      const res = await fetch(route);
-      const data = await res.json();
-      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  .base {
+    background: #e0e0e0;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .slot {
+    width: 50px;
+    height: 50px;
+    background: #fff;
+    border: 1px dashed #aaa;
+    margin: 5px;
+    display: inline-block;
+    vertical-align: top;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .character {
+    width: 100%;
+    height: 100%;
+    background-color: #ffcc00;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    text-align: center;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Steal-a-Thing 🚀</h1>
+<div class="tapis" id="tapis"></div>
+
+<script>
+  const BASES = 8;
+  const SLOTS = 12;
+
+  // Charger le playset et les personnages depuis l'API
+  async function loadPlayset() {
+    const playsetRes = await fetch("/api/playset");
+    const playset = await playsetRes.json();
+
+    const charactersRes = await fetch("/api/characters");
+    const characters = await charactersRes.json();
+
+    const tapis = document.getElementById("tapis");
+    tapis.innerHTML = "";
+
+    for (let b = 0; b < BASES; b++) {
+      const baseDiv = document.createElement("div");
+      baseDiv.classList.add("base");
+      baseDiv.innerHTML = `<strong>Base ${b+1}</strong><br>`;
+
+      for (let s = 0; s < SLOTS; s++) {
+        const slotDiv = document.createElement("div");
+        slotDiv.classList.add("slot");
+
+        // placer aléatoirement un personnage dans ce slot pour l'exemple
+        const rand = Math.random() * 100;
+        const character = characters.find(c => rand <= c.spawnChance);
+        if (character) {
+          const charDiv = document.createElement("div");
+          charDiv.classList.add("character");
+          charDiv.textContent = character.name;
+          slotDiv.appendChild(charDiv);
+        }
+
+        baseDiv.appendChild(slotDiv);
+      }
+
+      tapis.appendChild(baseDiv);
     }
-  </script>
+  }
+
+  loadPlayset();
+</script>
 </body>
 </html>
 
-<script>
-async function loadPlayset() {
-  const res = await fetch("/api/playset");
-  const playset = await res.json();
-  console.log(playset); // tu peux ensuite l'afficher dans le DOM
-}
-
-loadPlayset();
-</script>
