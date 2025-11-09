@@ -3,7 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Steal-a-Thing - Test Front</title>
+  <title>Steal-a-Thing</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+    pre { background: #333; color: #fff; padding: 10px; display: inline-block; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Steal-a-Thing 🚀</h1>
+  <p>Bienvenue sur le mini front de test !</p>
 
+  <button onclick="testRoute('/api/game')">Tester /api/game</button>
+  <button onclick="testRoute('/api/player')">Tester /api/player</button>
+
+  <pre id="result"></pre>
+
+  <script>
+    async function testRoute(route) {
+      const res = await fetch(route);
+      const data = await res.json();
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
