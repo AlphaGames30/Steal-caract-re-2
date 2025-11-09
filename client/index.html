@@ -3,11 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <title>Steal-a-Thing 3D Bases</title>
-<style>
-html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
-#money, #message { position:absolute; z-index:10; font-weight:bold; }
-#money { bottom:10px; right:10px; color:yellow; font-size:18px; }
-#message { top:10px; left:50%; transform:translateX(-50%); color:red; font-size:18px; display:none; }
+ <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* empêche les barres de défilement */
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 </style>
 </head>
 <body>
