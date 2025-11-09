@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import gameRoutes from "./routes/game.js";
 import playerRoutes from "./routes/player.js";
+import playsetRoutes from "./routes/playset.js";
 
 dotenv.config();
 
