@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Steal-a-Thing 3D Bases & PNJ</title>
+<title>Steal-a-Thing 3D</title>
 <style>
-html, body { width:100%; height:100%; margin:0; overflow:hidden; }
-#money, #message { position:absolute; font-size:16px; font-weight:bold; z-index:10; }
-#money { bottom:10px; right:10px; color:yellow; }
-#message { top:10px; left:50%; transform:translateX(-50%); color:red; display:none; }
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
+  #money, #message { position:absolute; z-index:10; font-weight:bold; }
+  #money { bottom:10px; right:10px; color:yellow; font-size:18px; }
+  #message { top:10px; left:50%; transform:translateX(-50%); color:red; font-size:18px; display:none; }
 </style>
 </head>
 <body>
@@ -19,16 +19,18 @@ html, body { width:100%; height:100%; margin:0; overflow:hidden; }
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script>
 const canvas = document.getElementById("renderCanvas");
-const engine = new BABYLON.Engine(canvas, true);
+const engine = new BABYLON.Engine(canvas,true);
 const scene = new BABYLON.Scene(engine);
-scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
+scene.clearColor = new BABYLON.Color3(0.6,0.8,1);
 
-// --- Caméra ---
-const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 120, new BABYLON.Vector3(0,0,0), scene);
+// --- Caméra joueur ---
+const camera = new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/3,50,new BABYLON.Vector3(0,0,0),scene);
 camera.attachControl(canvas,true);
 
-// --- Lumière ---
-new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0,1,0), scene);
+// --- Lumières ---
+new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
+const dirLight = new BABYLON.DirectionalLight("dir",new BABYLON.Vector3(0,-1,1),scene);
+dirLight.intensity = 0.7;
 
 // --- Sol ---
 const ground = BABYLON.MeshBuilder.CreateGround("ground",{width:90,height:100},scene);
@@ -36,21 +38,19 @@ const groundMat = new BABYLON.StandardMaterial("groundMat",scene);
 groundMat.diffuseColor = new BABYLON.Color3(0,0.6,0);
 ground.material = groundMat;
 
-// --- Barrières ---
-function createWall(x,z,width,height,depth){
-  const wall = BABYLON.MeshBuilder.CreateBox("wall",{width:width,height:height,depth:depth},scene);
-  wall.position.set(x,height/2,z);
-  const mat = new BABYLON.StandardMaterial("wallMat",scene);
-  mat.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
-  wall.material = mat;
-  return wall;
+// --- Portails nord et sud ---
+function createPortal(x,z,name){
+  const portal = BABYLON.MeshBuilder.CreateBox(name,{width:6,height:6,depth:1},scene);
+  portal.position.set(x,3,z);
+  const mat = new BABYLON.StandardMaterial(name+"Mat",scene);
+  mat.diffuseColor = (name=="north")? new BABYLON.Color3(0,0,1) : new BABYLON.Color3(1,0,0);
+  portal.material = mat;
+  return portal;
 }
-createWall(0,-50,90,10,1); // nord
-createWall(0,50,90,10,1);  // sud
-createWall(-45,0,1,10,100); // ouest
-createWall(45,0,1,10,100);  // est
+const northPortal = createPortal(0,-48,"north");
+const southPortal = createPortal(0,48,"south");
 
-// --- Bases ---
+// --- Bases interactives ---
 const bases = [];
 function createBase(x,z){
   const base = BABYLON.MeshBuilder.CreateBox("base",{width:10,height:5,depth:10},scene);
@@ -67,7 +67,7 @@ for(let i=0;i<4;i++) createBase(30,i*25-37.5);
 
 // --- Joueur ---
 const player = BABYLON.MeshBuilder.CreateBox("player",{width:1,height:2,depth:1},scene);
-player.position.set(0,1,40);
+player.position.set(0,1,45);
 player.material = new BABYLON.StandardMaterial("playerMat",scene);
 player.material.diffuseColor = new BABYLON.Color3(0,0,1);
 
@@ -89,7 +89,8 @@ function showMessage(text){
 class PNJ{
   constructor(data,x,z){
     this.data = data;
-    const size = data.name==="Petit Dragon"?1.5:1; // exemple perso personnalisé
+    // Skins selon le nom
+    const size = data.name==="Petit Dragon"?1.5:1;
     this.mesh = BABYLON.MeshBuilder.CreateBox(data.name,{width:size,height:size*2,depth:size},scene);
     this.mesh.position.set(x,size,z);
     const mat = new BABYLON.StandardMaterial(data.name+"Mat",scene);
@@ -99,7 +100,7 @@ class PNJ{
     // GUI label
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
     const label = new BABYLON.GUI.Rectangle();
-    label.width="100px"; label.height="60px"; label.background="transparent";
+    label.width="100px"; label.height="50px"; label.background="transparent";
     const textBlock = new BABYLON.GUI.TextBlock();
     textBlock.text = `${data.name}\n${data.rarity}\n${data.gain}/s\n${data.price}💵`;
     textBlock.color="white"; textBlock.fontSize=12; textBlock.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
@@ -108,6 +109,7 @@ class PNJ{
     label.linkWithMesh(this.mesh);
     label.linkOffsetY=-40;
 
+    // Achat clic
     this.mesh.actionManager = new BABYLON.ActionManager(scene);
     this.mesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger,()=>{
       buyPNJ(this);
@@ -135,7 +137,7 @@ const availablePNJ = [
 
 const pnjList=[];
 
-// --- Acheter ---
+// --- Acheter PNJ ---
 function buyPNJ(pnj){
   if(money>=pnj.data.price){
     const base = bases.find(b=>b.slots.includes(null));
@@ -149,25 +151,25 @@ function buyPNJ(pnj){
   } else showMessage("Pas assez d'argent !");
 }
 
-// --- Spawn automatique toutes les 3s ---
+// --- Spawn PNJ automatique depuis portail nord ---
 setInterval(()=>{
   const data = availablePNJ[Math.floor(Math.random()*availablePNJ.length)];
-  const pnj = new PNJ(data,0,-40);
+  const pnj = new PNJ(data,0,-48);
   pnjList.push(pnj);
 },3000);
 
-// --- Déplacement PNJ vers portail ---
+// --- Déplacement PNJ vers portail sud ---
 scene.onBeforeRenderObservable.add(()=>{
   for(let i=pnjList.length-1;i>=0;i--){
     const p = pnjList[i];
     if(!bases.some(b=>b.slots.includes(p))){
-      p.mesh.position.z += 0.2;
-      if(p.mesh.position.z>50){ p.mesh.dispose(); pnjList.splice(i,1); }
+      p.mesh.position.z += 0.15;
+      if(p.mesh.position.z>48){ p.mesh.dispose(); pnjList.splice(i,1); }
     }
   }
 });
 
-// --- Déplacement joueur ---
+// --- Contrôle joueur ---
 const inputMap={};
 scene.actionManager = new BABYLON.ActionManager(scene);
 scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger,(evt)=>{inputMap[evt.sourceEvent.key]=true;}));
@@ -180,10 +182,12 @@ scene.onBeforeRenderObservable.add(()=>{
   if(inputMap["d"]) player.position.x += 0.3;
 });
 
+// --- Render Loop ---
 engine.runRenderLoop(()=>scene.render());
 window.addEventListener("resize",()=>engine.resize());
 </script>
 </body>
 </html>
+
 
 
