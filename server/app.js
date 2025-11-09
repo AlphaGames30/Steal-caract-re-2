@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-
 import gameRoutes from "./routes/game.js";
 import playerRoutes from "./routes/player.js";
 
@@ -16,6 +15,8 @@ const app = express(); // ⬅️ App doit être créé avant toute utilisation
 
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/playset", playsetRoutes);
 
 // Servir le front
 app.use(express.static(path.join(__dirname, "../client")));
