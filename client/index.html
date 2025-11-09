@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Steal-a-Thing 3D Herbe</title>
+<title>Steal-a-Thing 3D Jouable</title>
 <style>
   body { margin: 0; overflow: hidden; }
 </style>
@@ -18,9 +18,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa0a0a0);
 
 // --- Caméra ---
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-camera.position.set(0, 30, 40);
-camera.lookAt(0, 0, 0);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+camera.position.set(0, 10, 20);
 
 // --- Renderer ---
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -30,97 +29,102 @@ document.body.appendChild(renderer.domElement);
 // --- Lumières ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
-
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(10, 30, 10);
 scene.add(dirLight);
 
 // --- Sol vert ---
-const solGeo = new THREE.PlaneGeometry(60, 30);
-const solMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // vert herbe
+const solGeo = new THREE.PlaneGeometry(60, 40);
+const solMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const sol = new THREE.Mesh(solGeo, solMat);
-sol.rotation.x = -Math.PI / 2;
+sol.rotation.x = -Math.PI/2;
 scene.add(sol);
 
-// --- Tapis central vert clair ---
-const tapisGeo = new THREE.PlaneGeometry(40, 15);
+// --- Tapis central ---
+const tapisGeo = new THREE.PlaneGeometry(40, 30);
 const tapisMat = new THREE.MeshStandardMaterial({ color: 0x7CFC00 });
 const tapis = new THREE.Mesh(tapisGeo, tapisMat);
 tapis.position.y = 0.01;
-tapis.rotation.x = -Math.PI / 2;
+tapis.rotation.x = -Math.PI/2;
 scene.add(tapis);
 
-// --- Murs autour du playset ---
-const murs = [];
-const murConfigs = [
-  { x:0, y:0.5, z:-15, w:60, h:1, d:1, color:0x808080 }, // gris bas
-  { x:0, y:1.5, z:-15, w:60, h:1, d:1, color:0x8B4513 }, // marron milieu
-  { x:0, y:2.5, z:-15, w:60, h:0.2, d:1, color:0x228B22 }, // vert fin dessus
-];
-murConfigs.forEach(cfg => {
-  const geo = new THREE.BoxGeometry(cfg.w, cfg.h, cfg.d);
-  const mat = new THREE.MeshStandardMaterial({ color: cfg.color });
+// --- Murs autour de tout le playset ---
+function createWall(x, y, z, w, h, d, color){
+  const geo = new THREE.BoxGeometry(w,h,d);
+  const mat = new THREE.MeshStandardMaterial({ color });
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(cfg.x, cfg.y, cfg.z);
+  mesh.position.set(x,y,z);
   scene.add(mesh);
-});
+}
 
-// --- Bases gauches et droites ---
+// Couches : gris bas, marron milieu, vert fin dessus
+const wallHeight = [1,1,0.2];
+const wallColors = [0x808080, 0x8B4513, 0x228B22];
+const halfWidth = 60/2;
+const halfDepth = 40/2;
+
+for(let i=0;i<3;i++){
+  const y = wallHeight[i]/2 + (i>0 ? wallHeight[i-1]:0);
+  // Murs X (avant/arrière)
+  createWall(0,y,-halfDepth,60,wallHeight[i],0.5,wallColors[i]);
+  createWall(0,y,halfDepth,60,wallHeight[i],0.5,wallColors[i]);
+  // Murs Z (gauche/droite)
+  createWall(-halfWidth,y,0,0.5,wallHeight[i],40,wallColors[i]);
+  createWall(halfWidth,y,0,0.5,wallHeight[i],40,wallColors[i]);
+}
+
+// --- Bases : 4 à gauche, 4 à droite ---
 const BASES = 4;
 const SLOTS = 6;
 const baseWidth = 3;
 const baseDepth = 2;
 const slotSpacing = 1.2;
 
-// Personnages simples
-const charactersData = [
-  { color: 0xff0000 }, { color: 0x00ff00 }, { color: 0x0000ff }
-];
-
-// Gauche
 for(let b=0;b<BASES;b++){
   for(let s=0;s<SLOTS;s++){
+    // Gauche
     const slotGeo = new THREE.BoxGeometry(baseWidth,1,baseDepth);
     const slotMat = new THREE.MeshStandardMaterial({ color:0xaaaaaa });
     const slot = new THREE.Mesh(slotGeo, slotMat);
     slot.position.set(-25 + b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
     scene.add(slot);
-
-    // personnage
-    if(Math.random()<0.3){
-      const c = charactersData[Math.floor(Math.random()*charactersData.length)];
-      const charGeo = new THREE.BoxGeometry(1,2,1);
-      const charMat = new THREE.MeshStandardMaterial({ color:c.color });
-      const char = new THREE.Mesh(charGeo,charMat);
-      char.position.set(slot.position.x,1.5,slot.position.z);
-      scene.add(char);
-    }
+    // Droite
+    const slot2 = new THREE.Mesh(slotGeo, slotMat.clone());
+    slot2.position.set(25 - b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
+    scene.add(slot2);
   }
 }
 
-// Droite
-for(let b=0;b<BASES;b++){
-  for(let s=0;s<SLOTS;s++){
-    const slotGeo = new THREE.BoxGeometry(baseWidth,1,baseDepth);
-    const slotMat = new THREE.MeshStandardMaterial({ color:0xaaaaaa });
-    const slot = new THREE.Mesh(slotGeo, slotMat);
-    slot.position.set(25 - b*(baseWidth+1),0.5,-7 + s*(baseDepth+slotSpacing));
-    scene.add(slot);
+// --- Personnage contrôlable ---
+const playerGeo = new THREE.BoxGeometry(1,2,1);
+const playerMat = new THREE.MeshStandardMaterial({ color:0x0000ff });
+const player = new THREE.Mesh(playerGeo, playerMat);
+player.position.set(0,1,12);
+scene.add(player);
 
-    if(Math.random()<0.3){
-      const c = charactersData[Math.floor(Math.random()*charactersData.length)];
-      const charGeo = new THREE.BoxGeometry(1,2,1);
-      const charMat = new THREE.MeshStandardMaterial({ color:c.color });
-      const char = new THREE.Mesh(charGeo,charMat);
-      char.position.set(slot.position.x,1.5,slot.position.z);
-      scene.add(char);
-    }
-  }
-}
+// --- Déplacements ---
+const keys = {};
+document.addEventListener('keydown', e=>keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', e=>keys[e.key.toLowerCase()] = false);
+
+const speed = 0.2;
 
 // --- Animation ---
 function animate(){
   requestAnimationFrame(animate);
+
+  // Contrôle joueur
+  if(keys['w'] || keys['arrowup']) player.position.z -= speed;
+  if(keys['s'] || keys['arrowdown']) player.position.z += speed;
+  if(keys['a'] || keys['arrowleft']) player.position.x -= speed;
+  if(keys['d'] || keys['arrowright']) player.position.x += speed;
+
+  // Caméra derrière le joueur
+  camera.position.x = player.position.x;
+  camera.position.z = player.position.z + 8;
+  camera.position.y = player.position.y + 5;
+  camera.lookAt(player.position);
+
   renderer.render(scene,camera);
 }
 
