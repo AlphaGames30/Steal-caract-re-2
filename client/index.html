@@ -21,3 +21,13 @@
   </script>
 </body>
 </html>
+
+<script>
+async function loadPlayset() {
+  const res = await fetch("/api/playset");
+  const playset = await res.json();
+  console.log(playset); // tu peux ensuite l'afficher dans le DOM
+}
+
+loadPlayset();
+</script>
