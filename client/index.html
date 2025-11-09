@@ -203,6 +203,77 @@ scene.onBeforeRenderObservable.add(()=>{
   if(inputMap["d"]) player.position.x += 0.3;
 });
 
+ <script>
+// --- Renderer ---
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// --- Scène ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa0a0a0);
+
+// --- Caméra ---
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+
+// --- Lumières ---
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10,20,10);
+scene.add(light);
+
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambient);
+
+// --- Sol ---
+const solGeo = new THREE.PlaneGeometry(100,100);
+const solMat = new THREE.MeshStandardMaterial({color:0x228B22});
+const sol = new THREE.Mesh(solGeo, solMat);
+sol.rotation.x = -Math.PI/2;
+scene.add(sol);
+
+// --- Personnage joueur ---
+const playerGeo = new THREE.BoxGeometry(1,2,1);
+const playerMat = new THREE.MeshStandardMaterial({color:0x0000ff});
+const player = new THREE.Mesh(playerGeo, playerMat);
+player.position.set(0,1,0);
+scene.add(player);
+
+// --- Contrôles clavier ---
+const keys = {};
+document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+const speed = 0.2;
+
+// --- Animation ---
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Déplacement joueur
+  if(keys['a'] || keys['arrowup']) player.position.z -= speed;
+  if(keys['z'] || keys['arrowdown']) player.position.z += speed;
+  if(keys['e'] || keys['arrowleft']) player.position.x -= speed;
+  if(keys['r'] || keys['arrowright']) player.position.x += speed;
+
+  // Caméra derrière le joueur
+  camera.position.x = player.position.x + 5;
+  camera.position.y = player.position.y + 5;
+  camera.position.z = player.position.z + 10;
+  camera.lookAt(player.position);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// --- Resize ---
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+
 // --- Render Loop ---
 engine.runRenderLoop(()=>scene.render());
 window.addEventListener("resize",()=>engine.resize());
