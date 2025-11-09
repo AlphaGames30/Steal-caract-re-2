@@ -5,6 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Steal-a-Thing</title>
 <style>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
+
+// Créer la scène
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff); // tapis blanc
+
+// Caméra
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+camera.position.set(0, 10, 15);
+camera.lookAt(0, 0, 0);
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Sol (tapis)
+const planeGeo = new THREE.PlaneGeometry(20, 30);
+const planeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const plane = new THREE.Mesh(planeGeo, planeMat);
+plane.rotation.x = -Math.PI / 2;
+scene.add(plane);
+
+// Boucle d'animation
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+
   body {
     font-family: Arial, sans-serif;
     background: #f0f0f0;
