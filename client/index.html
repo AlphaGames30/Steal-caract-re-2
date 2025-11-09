@@ -53,7 +53,7 @@ const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0,1,0), 
 light.intensity = 0.9;
 
 // --- Sol ---
-const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:20, height:120}, scene);
+const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:90, height:110}, scene);
 const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
 groundMat.diffuseColor = new BABYLON.Color3(0.13,0.55,0.13); // vert herbe
 ground.material = groundMat;
@@ -64,10 +64,10 @@ wallMat.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
 const wallHeight = 5;
 const wallThickness = 0.5;
 const walls = [
-  BABYLON.MeshBuilder.CreateBox("wallN",{width:20, height:wallHeight, depth:wallThickness},scene),
-  BABYLON.MeshBuilder.CreateBox("wallS",{width:20, height:wallHeight, depth:wallThickness},scene),
-  BABYLON.MeshBuilder.CreateBox("wallE",{width:wallThickness, height:wallHeight, depth:120},scene),
-  BABYLON.MeshBuilder.CreateBox("wallW",{width:wallThickness, height:wallHeight, depth:120},scene),
+  BABYLON.MeshBuilder.CreateBox("wallN",{width:90, height:wallHeight, depth:wallThickness},scene),
+  BABYLON.MeshBuilder.CreateBox("wallS",{width:90, height:wallHeight, depth:wallThickness},scene),
+  BABYLON.MeshBuilder.CreateBox("wallE",{width:wallThickness, height:wallHeight, depth:110},scene),
+  BABYLON.MeshBuilder.CreateBox("wallW",{width:wallThickness, height:wallHeight, depth:110},scene),
 ];
 walls[0].position.set(0, wallHeight/2, -60);
 walls[1].position.set(0, wallHeight/2, 60);
@@ -181,6 +181,104 @@ engine.runRenderLoop(()=>{
 
   // Caméra derrière joueur
   camera.setTarget(player.position);
+
+  // --- Définition des bases avec slots ---
+const baseSlots = 3; // chaque base peut contenir 3 PNJ max
+const basePNJs = bases.map(() => []); // tableau de tableau : chaque base = tableau de PNJ
+
+// --- Fonction pour trouver une base avec slot libre ---
+function findAvailableBase() {
+    for(let i=0;i<basePNJs.length;i++){
+        if(basePNJs[i].length < baseSlots) return i;
+    }
+    return -1; // pas de base dispo
+}
+
+// --- Fonction pour acheter un PNJ ---
+function buyPNJ(pnj) {
+    if(money >= pnj.price){
+        const baseIndex = findAvailableBase();
+        if(baseIndex === -1){
+            showMessage("Plus de place, vends-en un !");
+            return;
+        }
+        // Débit argent
+        money -= pnj.price;
+        updateMoneyDisplay();
+
+        // Placement PNJ dans la base
+        const base = bases[baseIndex];
+        const xOffset = (basePNJs[baseIndex].length - (baseSlots-1)/2) * 1.5; // écart entre PNJ
+        pnj.mesh.position.set(base.position.x + xOffset, 1, base.position.z);
+        pnj.label.position.set(base.position.x + xOffset, 2.5, base.position.z);
+
+        basePNJs[baseIndex].push(pnj);
+
+        // Retirer de la liste de spawn
+        const idx = pnjList.indexOf(pnj);
+        if(idx !== -1) pnjList.splice(idx,1);
+
+    } else {
+        showMessage("Pas assez d'argent !");
+    }
+}
+
+// --- Raycast pour cliquer sur PNJ ---
+scene.onPointerObservable.add((pointerInfo) => {
+    if(pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN){
+        const pick = scene.pick(pointerInfo.event.clientX, pointerInfo.event.clientY);
+        if(pick.hit && pnjList.includes(pick.pickedMesh._pnjRef)){
+            buyPNJ(pick.pickedMesh._pnjRef);
+        }
+    }
+});
+
+// --- Lors de la création d'un PNJ, on lie la référence pour le raycast ---
+class PNJ{
+    constructor(name,rarity,price,x,z){
+        this.name=name;
+        this.rarity=rarity;
+        this.price=price;
+        this.mesh=BABYLON.MeshBuilder.CreateBox(name,{width:1,height:2,length:1},scene);
+        this.mesh.position.set(x,1,z);
+        this.mesh.material=new BABYLON.StandardMaterial("mat",scene);
+        this.mesh.material.diffuseColor = PNJ.getColor(rarity);
+
+        // Lier pour clic
+        this.mesh._pnjRef = this;
+
+        // Label
+        const plane = BABYLON.MeshBuilder.CreatePlane(name+"label",{width:3,height:1},scene);
+        plane.parent = this.mesh;
+        plane.position.y=2.5;
+        const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+        const label = new BABYLON.GUI.TextBlock();
+        label.text = `${name}\n${rarity} | ${price}💵`;
+        label.color="white";
+        label.fontSize=50;
+        label.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        label.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        advancedTexture.addControl(label);
+        this.label = plane;
+    }
+    move(speed){ this.mesh.position.z += speed; }
+    static getColor(rarity){
+        switch(rarity){
+            case "Commun": return new BABYLON.Color3(0.7,0.7,0.7);
+            case "Rare": return new BABYLON.Color3(0,1,0);
+            case "Epic": return new BABYLON.Color3(0,0,1);
+            case "Légendaire": return new BABYLON.Color3(1,0.84,0);
+            default: return new BABYLON.Color3(1,1,1);
+        }
+    }
+}
+
+// --- Spawn automatique toutes les 1,5s ---
+setInterval(()=>{
+    const pnjData = availablePNJ[Math.floor(Math.random()*availablePNJ.length)];
+    const pnj = new PNJ(pnjData.name,pnjData.rarity,pnjData.price,0,-50);
+    pnjList.push(pnj);
+},1500);
 
   // Déplacement PNJ
   for(let i=pnjList.length-1;i>=0;i--){
