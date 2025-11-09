@@ -1,5 +1,4 @@
 [
-  // ====================== COMMUNS (15) ======================
   {"name":"Petit Lapin","rarity":"Commun","price":50,"moneyPerSecond":5,"spawnChance":45},
   {"name":"Chaton Joueur","rarity":"Commun","price":75,"moneyPerSecond":12,"spawnChance":40},
   {"name":"Petit Robot","rarity":"Commun","price":100,"moneyPerSecond":20,"spawnChance":35},
@@ -15,8 +14,6 @@
   {"name":"Petit Ninja","rarity":"Commun","price":500,"moneyPerSecond":100,"spawnChance":36},
   {"name":"Petit Pirate","rarity":"Commun","price":600,"moneyPerSecond":120,"spawnChance":38},
   {"name":"Petit Roi","rarity":"Commun","price":1000,"moneyPerSecond":180,"spawnChance":30},
-
-  // ====================== RARES (12) ======================
   {"name":"Dragon Bleu","rarity":"Rare","price":1500,"moneyPerSecond":200,"spawnChance":25},
   {"name":"Guerrier Fauve","rarity":"Rare","price":2500,"moneyPerSecond":220,"spawnChance":18},
   {"name":"Fée Lumineuse","rarity":"Rare","price":3200,"moneyPerSecond":250,"spawnChance":12},
@@ -29,8 +26,6 @@
   {"name":"Cheval Fantastique","rarity":"Rare","price":2000,"moneyPerSecond":200,"spawnChance":26},
   {"name":"Ogre Vert","rarity":"Rare","price":1800,"moneyPerSecond":220,"spawnChance":30},
   {"name":"Petit Vampire","rarity":"Rare","price":1700,"moneyPerSecond":240,"spawnChance":28},
-
-  // ====================== EPIC (7) ======================
   {"name":"Dragon Écarlate","rarity":"Epic","price":5000,"moneyPerSecond":400,"spawnChance":12},
   {"name":"Guerrier Fantôme","rarity":"Epic","price":5500,"moneyPerSecond":450,"spawnChance":11},
   {"name":"Fée des Ombres","rarity":"Epic","price":6000,"moneyPerSecond":500,"spawnChance":10},
@@ -38,31 +33,23 @@
   {"name":"Loup Lunaire","rarity":"Epic","price":7000,"moneyPerSecond":650,"spawnChance":10},
   {"name":"Griffon Noir","rarity":"Epic","price":7500,"moneyPerSecond":700,"spawnChance":12},
   {"name":"Magicien des Vents","rarity":"Epic","price":8000,"moneyPerSecond":900,"spawnChance":11},
-
-  // ====================== LEGENDARY (6) ======================
   {"name":"Dragon Doré","rarity":"Légendaire","price":10000,"moneyPerSecond":1000,"spawnChance":12},
   {"name":"Titan de Glace","rarity":"Légendaire","price":25000,"moneyPerSecond":1200,"spawnChance":10},
   {"name":"Phoenix Éternel","rarity":"Légendaire","price":50000,"moneyPerSecond":1500,"spawnChance":9},
   {"name":"Chevalier Divin","rarity":"Légendaire","price":80000,"moneyPerSecond":1800,"spawnChance":7},
   {"name":"Dragon Noir Ancien","rarity":"Légendaire","price":120000,"moneyPerSecond":1900,"spawnChance":8},
   {"name":"Sorcière Suprême","rarity":"Légendaire","price":150000,"moneyPerSecond":1700,"spawnChance":11},
-
-  // ====================== MYTHIC (6) ======================
   {"name":"Dieu du Feu","rarity":"Mythique","price":1000000,"moneyPerSecond":2000,"spawnChance":0.06},
   {"name":"Titan de l’Ombre","rarity":"Mythique","price":2000000,"moneyPerSecond":5000,"spawnChance":3},
   {"name":"Phoenix Céleste","rarity":"Mythique","price":3500000,"moneyPerSecond":7000,"spawnChance":5},
   {"name":"Dragon Primordial","rarity":"Mythique","price":5000000,"moneyPerSecond":12000,"spawnChance":2},
   {"name":"Fée Suprême","rarity":"Mythique","price":6000000,"moneyPerSecond":15000,"spawnChance":4},
   {"name":"Chevalier Éternel","rarity":"Mythique","price":7000000,"moneyPerSecond":17000,"spawnChance":6},
-
-  // ====================== CARATERGOD (5) ======================
   {"name":"Dieu du Tonnerre","rarity":"Caractergod","price":2000000,"moneyPerSecond":17000,"spawnChance":0.0009},
   {"name":"Titan Infinie","rarity":"Caractergod","price":5000000,"moneyPerSecond":50000,"spawnChance":0.005},
   {"name":"Dragon du Cosmos","rarity":"Caractergod","price":10000000,"moneyPerSecond":90000,"spawnChance":0.02},
   {"name":"Fée Divine","rarity":"Caractergod","price":50000000,"moneyPerSecond":120000,"spawnChance":0.03},
   {"name":"Chevalier Absolu","rarity":"Caractergod","price":100000000,"moneyPerSecond":200000,"spawnChance":0.06},
-
-  // ====================== SECRET (3) ======================
   {"name":"Dieu de l’Univers","rarity":"Secret","price":300000000,"moneyPerSecond":200000,"spawnChance":0.00008},
   {"name":"Titan Suprême","rarity":"Secret","price":1000000000,"moneyPerSecond":5000000,"spawnChance":0.0005},
   {"name":"Dragon Ultime","rarity":"Secret","price":1500000000,"moneyPerSecond":100000000,"spawnChance":0.0009}
