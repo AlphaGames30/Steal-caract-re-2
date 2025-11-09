@@ -38,6 +38,11 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.153.0/exampl
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa0a0a0);
 
+// --- Renderer ---
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
 // --- Caméra et contrôles ---
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
 camera.position.set(0, 15, 25);
@@ -45,11 +50,6 @@ const controls = new OrbitControls(camera, renderer?.domElement);
 controls.target.set(0,1,0);
 controls.enablePan = false;
 controls.enableZoom = true;
-
-// --- Renderer ---
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 
 // --- Lumières ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
