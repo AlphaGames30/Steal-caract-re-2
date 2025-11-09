@@ -1,228 +1,202 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Steal-a-Thing – Playset 3D</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steal-a-Thing 3D Jouable</title>
 <style>
-  body { margin:0; overflow:hidden; font-family:sans-serif; }
-  #ui {
-    position:absolute; top:10px; left:10px;
-    background:rgba(0,0,0,0.4); padding:10px; border-radius:8px;
-  }
-  button {
-    display:block; margin:5px 0; padding:5px 10px;
-    background:#28a745; border:none; color:white; cursor:pointer;
-    border-radius:4px;
-  }
-  button:hover { background:#218838; }
-  #money {
-    position:absolute; bottom:20px; right:20px;
-    color:yellow; font-size:24px; font-weight:bold;
-  }
+  body { margin: 0; overflow: hidden; }
   #message {
-    position:absolute; top:20px; left:50%; transform:translateX(-50%);
-    color:red; font-size:22px; font-weight:bold; display:none;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: red;
+    font-size: 24px;
+    font-weight: bold;
+    display: none;
+    z-index: 10;
+  }
+  #money {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: yellow;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 10;
   }
 </style>
 </head>
 <body>
-<div id="ui">
-  <button id="buy0">Acheter Petit Titan (50💵)</button>
-  <button id="buy1">Acheter Souris Malicieuse (80💵)</button>
-  <button id="buy2">Acheter Grand Héron (120💵)</button>
-  <button id="buy3">Acheter Petit Dragon (500💵)</button>
-</div>
-<div id="message">Plus de place !</div>
+<div id="message">Plus de place, vends-en un !</div>
 <div id="money">💵 100</div>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+<script>
+const canvas = document.createElement('canvas');
+canvas.id = 'renderCanvas';
+canvas.style.width = '100%';
+canvas.style.height = '100%';
+document.body.appendChild(canvas);
 
-// === SCÈNE, RENDERER, CAMÉRA ===
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa0a0a0);
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 200);
-camera.position.set(0,12,20);
+const engine = new BABYLON.Engine(canvas, true);
+const scene = new BABYLON.Scene(engine);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
+// --- Caméra ---
+const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI/2, Math.PI/3, 50, new BABYLON.Vector3(0,0,0), scene);
+camera.attachControl(canvas, true);
 
-// === LUMIÈRES ===
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
-const dirLight = new THREE.DirectionalLight(0xffffff,0.8);
-dirLight.position.set(10,30,10);
-scene.add(dirLight);
+// --- Lumières ---
+const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0,1,0), scene);
+light.intensity = 0.9;
 
-// === SOL ===
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(60,40),
-  new THREE.MeshStandardMaterial({color:0x228B22})
-);
-ground.rotation.x = -Math.PI/2;
-scene.add(ground);
+// --- Sol ---
+const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:20, height:120}, scene);
+const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
+groundMat.diffuseColor = new BABYLON.Color3(0.13,0.55,0.13); // vert herbe
+ground.material = groundMat;
 
-// === MURS ===
-function addWall(x,z,rot){
-  const wallBottom = new THREE.Mesh(new THREE.BoxGeometry(40,2,1), new THREE.MeshStandardMaterial({color:0x555555}));
-  wallBottom.position.set(x,1,z);
-  wallBottom.rotation.y = rot;
-  scene.add(wallBottom);
-  const wallMid = new THREE.Mesh(new THREE.BoxGeometry(40,2,1), new THREE.MeshStandardMaterial({color:0x8B4513}));
-  wallMid.position.set(x,3,z);
-  wallMid.rotation.y = rot;
-  scene.add(wallMid);
-  const wallTop = new THREE.Mesh(new THREE.BoxGeometry(40,0.3,1), new THREE.MeshStandardMaterial({color:0x00aa00}));
-  wallTop.position.set(x,4.15,z);
-  wallTop.rotation.y = rot;
-  scene.add(wallTop);
-}
-addWall(0,20,0);
-addWall(0,-20,0);
-addWall(30,0,Math.PI/2);
-addWall(-30,0,Math.PI/2);
+// --- Murs ---
+const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+wallMat.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
+const wallHeight = 5;
+const wallThickness = 0.5;
+const walls = [
+  BABYLON.MeshBuilder.CreateBox("wallN",{width:20, height:wallHeight, depth:wallThickness},scene),
+  BABYLON.MeshBuilder.CreateBox("wallS",{width:20, height:wallHeight, depth:wallThickness},scene),
+  BABYLON.MeshBuilder.CreateBox("wallE",{width:wallThickness, height:wallHeight, depth:120},scene),
+  BABYLON.MeshBuilder.CreateBox("wallW",{width:wallThickness, height:wallHeight, depth:120},scene),
+];
+walls[0].position.set(0, wallHeight/2, -60);
+walls[1].position.set(0, wallHeight/2, 60);
+walls[2].position.set(10, wallHeight/2, 0);
+walls[3].position.set(-10, wallHeight/2, 0);
+walls.forEach(w => { w.material = wallMat; w.checkCollisions = true; });
 
-// === TAPIS CENTRAL ===
-const tapis = new THREE.Mesh(
-  new THREE.PlaneGeometry(6,24),
-  new THREE.MeshStandardMaterial({color:0x7CFC00})
-);
-tapis.rotation.x = -Math.PI/2;
-tapis.position.y = 0.05;
-scene.add(tapis);
+// --- Tapis central ---
+const tapis = BABYLON.MeshBuilder.CreateGround("tapis",{width:10, height:100},scene);
+tapis.position.y = 0.01;
+const tapisMat = new BABYLON.StandardMaterial("tapisMat", scene);
+tapisMat.diffuseColor = new BABYLON.Color3(0.49,1,0); // vert clair
+tapis.material = tapisMat;
 
-// === BASES (4 à gauche, 4 à droite) ===
-const baseGeo = new THREE.BoxGeometry(4,0.5,3);
-const baseMat = new THREE.MeshStandardMaterial({color:0xdddddd});
-for(let i=0;i<4;i++){
-  const left = new THREE.Mesh(baseGeo,baseMat);
-  left.position.set(-15,0.25,-12+i*8);
-  scene.add(left);
-  const right = new THREE.Mesh(baseGeo,baseMat);
-  right.position.set(15,0.25,-12+i*8);
-  scene.add(right);
+// --- Bases décorées ---
+const bases = [];
+for(let i=0;i<8;i++){
+  const base = BABYLON.MeshBuilder.CreateBox("base"+i,{width:3,height:2,length:3},scene);
+  base.position.y = 1;
+  base.position.x = (i<4?-7:7); // gauche/droite
+  base.position.z = (i%4)*25 - 37; // espacement
+  const baseMat = new BABYLON.StandardMaterial("baseMat"+i,scene);
+  baseMat.diffuseColor = new BABYLON.Color3(0.7,0.3,0.2);
+  base.material = baseMat;
+  bases.push(base);
 }
 
-// === JOUEUR ===
-const player = new THREE.Mesh(
-  new THREE.BoxGeometry(1,2,1),
-  new THREE.MeshStandardMaterial({color:0x0000ff})
-);
-player.position.set(0,1,10);
-scene.add(player);
+// --- Joueur ---
+const player = BABYLON.MeshBuilder.CreateBox("player",{width:1,height:2,length:1},scene);
+player.position.set(0,1,50);
+player.material = new BABYLON.StandardMaterial("playerMat",scene);
+player.material.diffuseColor = new BABYLON.Color3(0,0,1);
 
-const keys={};
-document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
-document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-const speed=0.25;
+// --- Argent et message ---
+let money = 100;
+const moneyDiv = document.getElementById('money');
+function updateMoneyDisplay(){ moneyDiv.textContent=`💵 ${Math.floor(money)}`; }
+updateMoneyDisplay();
+const messageDiv = document.getElementById('message');
+function showMessage(text){ messageDiv.textContent=text; messageDiv.style.display='block'; setTimeout(()=>{messageDiv.style.display='none';},1500); }
 
-// === PNJ CLASS ===
-class PNJ {
-  constructor(name, rarity, price){
-    this.name=name; this.rarity=rarity; this.price=price;
-    this.mesh=new THREE.Mesh(
-      new THREE.BoxGeometry(1,2,1),
-      new THREE.MeshStandardMaterial({color:PNJ.getColor(rarity)})
-    );
-    this.mesh.position.set(0,1,-10);
-    scene.add(this.mesh);
-
-    // label
-    const canvas=document.createElement('canvas');
-    canvas.width=256; canvas.height=64;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='white'; ctx.font='16px Arial';
-    ctx.fillText(`${name}`,10,20);
-    ctx.fillText(`${rarity} | ${price}💵`,10,45);
-    const texture=new THREE.CanvasTexture(canvas);
-    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true}));
-    sprite.scale.set(4,1,1);
-    sprite.position.set(0,3,-10);
-    scene.add(sprite);
-    this.label=sprite;
+// --- PNJ classe ---
+class PNJ{
+  constructor(name,rarity,price,x,z){
+    this.name=name;
+    this.rarity=rarity;
+    this.price=price;
+    this.mesh=BABYLON.MeshBuilder.CreateBox(name,{width:1,height:2,length:1},scene);
+    this.mesh.position.set(x,1,z);
+    this.mesh.material=new BABYLON.StandardMaterial("mat",scene);
+    this.mesh.material.diffuseColor = PNJ.getColor(rarity);
+    // Label
+    const plane = BABYLON.MeshBuilder.CreatePlane(name+"label",{width:3,height:1},scene);
+    plane.parent = this.mesh;
+    plane.position.y=2.5;
+    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+    const label = new BABYLON.GUI.TextBlock();
+    label.text = `${name}\n${rarity} | ${price}💵`;
+    label.color="white";
+    label.fontSize=50;
+    label.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    label.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    advancedTexture.addControl(label);
+    this.label = plane;
   }
-  move(speed){
-    this.mesh.position.z+=speed;
-    this.label.position.z+=speed;
-  }
-  static getColor(r){
-    switch(r){
-      case'Commun':return 0xaaaaaa;
-      case'Rare':return 0x00ff00;
-      case'Epic':return 0x0000ff;
-      case'Légendaire':return 0xffd700;
-      default:return 0xffffff;
+
+  move(speed){ this.mesh.position.z += speed; }
+
+  static getColor(rarity){
+    switch(rarity){
+      case "Commun": return new BABYLON.Color3(0.7,0.7,0.7);
+      case "Rare": return new BABYLON.Color3(0,1,0);
+      case "Epic": return new BABYLON.Color3(0,0,1);
+      case "Légendaire": return new BABYLON.Color3(1,0.84,0);
+      default: return new BABYLON.Color3(1,1,1);
     }
   }
 }
 
-// === PNJ DISPONIBLES ===
-const availablePNJ=[
-  {name:'Petit Titan',rarity:'Commun',price:50},
-  {name:'Souris Malicieuse',rarity:'Commun',price:80},
-  {name:'Grand Héron',rarity:'Rare',price:120},
-  {name:'Petit Dragon',rarity:'Epic',price:500}
+// --- PNJ disponibles ---
+const availablePNJ = [
+  {name:'Petit Titan', rarity:'Commun', price:50},
+  {name:'Souris Malicieuse', rarity:'Commun', price:80},
+  {name:'Grand Héron', rarity:'Rare', price:120},
+  {name:'Petit Dragon', rarity:'Epic', price:500},
 ];
 
 const pnjList=[];
-let money=100;
-const moneyDiv=document.getElementById('money');
-function updateMoney(){moneyDiv.textContent=`💵 ${Math.floor(money)}`;}
-updateMoney();
 
-function showMessage(t){
-  const m=document.getElementById('message');
-  m.textContent=t; m.style.display='block';
-  setTimeout(()=>m.style.display='none',1500);
-}
+// --- Spawn automatique toutes les 1,5s ---
+setInterval(()=>{
+  // Détermination du PNJ selon chance (simplifiée ici)
+  const pnjData = availablePNJ[Math.floor(Math.random()*availablePNJ.length)];
+  const pnj = new PNJ(pnjData.name,pnjData.rarity,pnjData.price,0,-50);
+  pnjList.push(pnj);
+},1500);
 
-// === SPAWN PNJ ===
-function spawnPNJ(data){
-  if(pnjList.length>=12){showMessage("Plus de place, vends-en un !");return;}
-  if(money<data.price){showMessage("Pas assez d'argent !");return;}
-  money-=data.price; updateMoney();
-  const p=new PNJ(data.name,data.rarity,data.price);
-  pnjList.push(p);
-}
+// --- Contrôles joueur ---
+const keys = {};
+document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+const speed = 0.5;
 
-// === BOUTONS D'ACHAT ===
-availablePNJ.forEach((p,i)=>{
-  document.getElementById('buy'+i).onclick=()=>spawnPNJ(p);
-});
+// --- Animation ---
+engine.runRenderLoop(()=>{
+  // Mouvement joueur
+  if(keys['w']) player.position.z -= speed;
+  if(keys['s']) player.position.z += speed;
+  if(keys['a']) player.position.x -= speed;
+  if(keys['d']) player.position.x += speed;
 
-// === GAIN D'ARGENT AUTOMATIQUE ===
-setInterval(()=>{money+=2;updateMoney();},2000);
+  // Caméra derrière joueur
+  camera.setTarget(player.position);
 
-// === ANIMATION ===
-function animate(){
-  requestAnimationFrame(animate);
-  if(keys['w']||keys['arrowup'])player.position.z-=speed;
-  if(keys['s']||keys['arrowdown'])player.position.z+=speed;
-  if(keys['a']||keys['arrowleft'])player.position.x-=speed;
-  if(keys['d']||keys['arrowright'])player.position.x+=speed;
-  camera.position.x=player.position.x+8;
-  camera.position.y=player.position.y+8;
-  camera.position.z=player.position.z+12;
-  camera.lookAt(player.position);
-
-  // PNJ move
+  // Déplacement PNJ
   for(let i=pnjList.length-1;i>=0;i--){
-    const p=pnjList[i]; p.move(0.02);
-    if(p.mesh.position.z>12){
-      scene.remove(p.mesh); scene.remove(p.label); pnjList.splice(i,1);
+    const p=pnjList[i];
+    p.move(0.1);
+    if(p.mesh.position.z>60){
+      p.mesh.dispose();
+      p.label.dispose();
+      pnjList.splice(i,1);
     }
   }
 
-  renderer.render(scene,camera);
-}
-animate();
-
-window.addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+  scene.render();
 });
+
+window.addEventListener('resize',()=>{ engine.resize(); });
 </script>
 </body>
 </html>
