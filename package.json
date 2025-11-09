@@ -1,7 +1,7 @@
 {
   "name": "steal-a-thing",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
   "description": "Jeu inspiré de Steal a Brainrot, hébergé sur Render avec Supabase",
   "main": "server/app.js",
   "scripts": {
