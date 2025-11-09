@@ -3,6 +3,18 @@ import cors from "cors";
 import dotenv from "dotenv";
 import gameRoutes from "./routes/game.js";
 import playerRoutes from "./routes/player.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Servir les fichiers statiques
+app.use(express.static(path.join(__dirname, "../client")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/index.html"));
+});
 
 dotenv.config();
 const app = express();
