@@ -1,0 +1,18 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import gameRoutes from "./routes/game.js";
+import playerRoutes from "./routes/player.js";
+
+dotenv.config();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use("/api/game", gameRoutes);
+app.use("/api/player", playerRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Serveur lancé sur le port ${PORT}`));
