@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Petit Lapin",
+    "rarity": "Commun",
+    "price": 50,
+    "moneyPerSecond": 5,
+    "spawnChance": 45
+  },
+  {
+    "name": "Chaton Joueur",
+    "rarity": "Commun",
+    "price": 75,
+    "moneyPerSecond": 12,
+    "spawnChance": 40
+  },
+  ...
+  {
+    "name": "Dragon Bleu",
+    "rarity": "Rare",
+    "price": 1500,
+    "moneyPerSecond": 200,
+    "spawnChance": 25
+  }
+]
