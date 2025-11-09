@@ -53,7 +53,7 @@ const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0,1,0), 
 light.intensity = 0.9;
 
 // --- Sol ---
-const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:90, height:110}, scene);
+const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:90, height:100}, scene);
 const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
 groundMat.diffuseColor = new BABYLON.Color3(0.13,0.55,0.13); // vert herbe
 ground.material = groundMat;
@@ -66,11 +66,11 @@ const wallThickness = 0.5;
 const walls = [
   BABYLON.MeshBuilder.CreateBox("wallN",{width:90, height:wallHeight, depth:wallThickness},scene),
   BABYLON.MeshBuilder.CreateBox("wallS",{width:90, height:wallHeight, depth:wallThickness},scene),
-  BABYLON.MeshBuilder.CreateBox("wallE",{width:wallThickness, height:wallHeight, depth:110},scene),
-  BABYLON.MeshBuilder.CreateBox("wallW",{width:wallThickness, height:wallHeight, depth:110},scene),
+  BABYLON.MeshBuilder.CreateBox("wallE",{width:wallThickness, height:wallHeight, depth:100},scene),
+  BABYLON.MeshBuilder.CreateBox("wallW",{width:wallThickness, height:wallHeight, depth:100},scene),
 ];
-walls[0].position.set(0, wallHeight/2, -60);
-walls[1].position.set(0, wallHeight/2, 60);
+walls[0].position.set(0, wallHeight/2, -100);
+walls[1].position.set(0, wallHeight/2, 100);
 walls[2].position.set(10, wallHeight/2, 0);
 walls[3].position.set(-10, wallHeight/2, 0);
 walls.forEach(w => { w.material = wallMat; w.checkCollisions = true; });
@@ -272,6 +272,199 @@ class PNJ{
         }
     }
 }
+<script>
+  // --- Renderer et scène ---
+  const canvas = document.createElement("canvas");
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  document.body.appendChild(canvas);
+
+  const engine = new BABYLON.Engine(canvas,true);
+  const scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color3(0.5,0.8,0.5);
+
+  // --- Caméra ---
+  const camera = new BABYLON.ArcRotateCamera("cam", -Math.PI/2, Math.PI/3, 50, new BABYLON.Vector3(0,0,0), scene);
+  camera.attachControl(canvas,true);
+
+  // --- Lumière ---
+  const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.9;
+
+  // --- Terrain ---
+  const ground = BABYLON.MeshBuilder.CreateGround("ground",{width:90, height:100},scene);
+  const groundMat = new BABYLON.StandardMaterial("groundMat",scene);
+  groundMat.diffuseColor = new BABYLON.Color3(0.1,0.5,0.1);
+  ground.material = groundMat;
+
+  // --- Tapis ---
+  const tapis = BABYLON.MeshBuilder.CreateGround("tapis",{width:6,height:20},scene);
+  tapis.position.z = 0;
+  tapis.material = new BABYLON.StandardMaterial("tapisMat",scene);
+  tapis.material.diffuseColor = new BABYLON.Color3(0.5,1,0.5);
+
+  // --- Bases ---
+  const bases = [];
+  const basePositions = [
+      {x:-20,z:-40},{x:-20,z:-10},{x:-20,z:10},{x:-20,z:40},
+      {x:20,z:-40},{x:20,z:-10},{x:20,z:10},{x:20,z:40}
+  ];
+
+  basePositions.forEach((pos,i)=>{
+      const base = BABYLON.MeshBuilder.CreateBox("base"+i,{width:8,height:2,length:8},scene);
+      base.position.set(pos.x,1,pos.z);
+      const mat = new BABYLON.StandardMaterial("baseMat"+i,scene);
+      mat.diffuseColor = new BABYLON.Color3(0.7,0.7,0.7);
+      base.material = mat;
+      bases.push(base);
+  });
+
+  // --- Gestion des slots ---
+  const baseSlots = 3;
+  const basePNJs = bases.map(()=>[]);
+
+  // --- Joueur ---
+  let money = 100;
+  const moneyDiv = document.createElement("div");
+  moneyDiv.style.position="absolute";
+  moneyDiv.style.bottom="20px";
+  moneyDiv.style.right="20px";
+  moneyDiv.style.color="yellow";
+  moneyDiv.style.fontSize="24px";
+  moneyDiv.style.fontWeight="bold";
+  moneyDiv.textContent = `💵 ${money}`;
+  document.body.appendChild(moneyDiv);
+
+  function updateMoneyDisplay(){ moneyDiv.textContent = `💵 ${Math.floor(money)}`; }
+
+  const messageDiv = document.createElement("div");
+  messageDiv.style.position="absolute";
+  messageDiv.style.top="20px";
+  messageDiv.style.left="50%";
+  messageDiv.style.transform="translateX(-50%)";
+  messageDiv.style.color="red";
+  messageDiv.style.fontSize="24px";
+  messageDiv.style.fontWeight="bold";
+  messageDiv.style.display="none";
+  document.body.appendChild(messageDiv);
+
+  function showMessage(text){
+      messageDiv.textContent=text;
+      messageDiv.style.display="block";
+      setTimeout(()=>{messageDiv.style.display="none";},1500);
+  }
+
+  // --- Classe PNJ personnalisé ---
+  class PNJ{
+      constructor(data){
+          this.name = data.name;
+          this.rarity = data.rarity;
+          this.price = data.price;
+          // Mesh principal
+          const size = 1 + Math.random()*0.5;
+          this.mesh = BABYLON.MeshBuilder.CreateBox(name,{width:size,height:size*2,length:size},scene);
+          this.mesh.material = new BABYLON.StandardMaterial(name+"mat",scene);
+          this.mesh.material.diffuseColor = PNJ.getColor(data.rarity);
+
+          // Décor selon le nom
+          if(this.name.includes("Dragon")){
+              const horn = BABYLON.MeshBuilder.CreateCylinder("horn",{diameterTop:0,diameterBottom:0.2,height:0.5, tessellation:3},scene);
+              horn.parent = this.mesh;
+              horn.position.set(0,1.5,0.4);
+          } else if(this.name.includes("Souris")){
+              const ears = BABYLON.MeshBuilder.CreateSphere("ears",{diameter:0.3},scene);
+              ears.parent = this.mesh;
+              ears.position.set(0.3,1.8,0);
+          }
+
+          this.mesh._pnjRef = this;
+
+          // Label
+          const plane = BABYLON.MeshBuilder.CreatePlane("label",{width:3,height:1},scene);
+          plane.parent = this.mesh;
+          plane.position.y = 2.5;
+          const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+          const label = new BABYLON.GUI.TextBlock();
+          label.text = `${this.name}\n${this.rarity} | ${this.price}💵`;
+          label.color="white";
+          label.fontSize=50;
+          label.textHorizontalAlignment=BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+          label.textVerticalAlignment=BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+          adt.addControl(label);
+
+          this.label = plane;
+      }
+      static getColor(rarity){
+          switch(rarity){
+              case "Commun": return new BABYLON.Color3(0.7,0.7,0.7);
+              case "Rare": return new BABYLON.Color3(0,1,0);
+              case "Epic": return new BABYLON.Color3(0,0,1);
+              case "Légendaire": return new BABYLON.Color3(1,0.84,0);
+              default: return new BABYLON.Color3(1,1,1);
+          }
+      }
+  }
+
+  // --- PNJ disponibles ---
+  const availablePNJ = [
+      {name:'Petit Dragon',rarity:'Epic',price:500},
+      {name:'Souris Malicieuse',rarity:'Commun',price:80},
+      {name:'Petit Titan',rarity:'Commun',price:50},
+      {name:'Grand Héron',rarity:'Rare',price:120},
+      {name:'Dragon Bébé',rarity:'Epic',price:600},
+      {name:'Hérisson Malin',rarity:'Commun',price:70},
+  ];
+
+  const pnjList = [];
+
+  function findAvailableBase(){ 
+      for(let i=0;i<basePNJs.length;i++){
+          if(basePNJs[i].length<baseSlots) return i;
+      }
+      return -1;
+  }
+
+  function buyPNJ(pnj){
+      const baseIndex = findAvailableBase();
+      if(baseIndex===-1){ showMessage("Plus de place, vends-en un !"); return; }
+      if(money<pnj.price){ showMessage("Pas assez d'argent !"); return; }
+      money -= pnj.price; updateMoneyDisplay();
+      const base = bases[baseIndex];
+      const xOffset = (basePNJs[baseIndex].length-(baseSlots-1)/2)*2;
+      pnj.mesh.position.set(base.position.x + xOffset,1,base.position.z);
+      pnj.label.position.set(base.position.x + xOffset,2.5,base.position.z);
+      basePNJs[baseIndex].push(pnj);
+
+      const idx = pnjList.indexOf(pnj);
+      if(idx!==-1) pnjList.splice(idx,1);
+  }
+
+  // --- Raycast clic pour acheter ---
+  scene.onPointerObservable.add((pi)=>{
+      if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
+          const pick = scene.pick(pi.event.clientX, pi.event.clientY);
+          if(pick.hit && pnjList.includes(pick.pickedMesh._pnjRef)){
+              buyPNJ(pick.pickedMesh._pnjRef);
+          }
+      }
+  });
+
+  // --- Spawn automatique toutes les 1.5s ---
+  setInterval(()=>{
+      const data = availablePNJ[Math.floor(Math.random()*availablePNJ.length)];
+      const pnj = new PNJ(data);
+      pnj.mesh.position.z = -45; // début tapis
+      pnjList.push(pnj);
+  },1500);
+
+  // --- Animation ---
+  engine.runRenderLoop(()=>{
+      pnjList.forEach(p=>{p.mesh.position.z += 0.05; p.label.position.z += 0.05;});
+      engine.scenes[0].render();
+  });
+
+  window.addEventListener("resize",()=>{engine.resize();});
+</script>
 
 // --- Spawn automatique toutes les 1,5s ---
 setInterval(()=>{
